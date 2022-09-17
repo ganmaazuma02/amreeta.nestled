@@ -7,19 +7,16 @@ using Nml.Refactor.Me.MessageBuilders;
 
 namespace Nml.Refactor.Me.Notifiers
 {
-	public class EmailNotifier : INotifier
+	public class EmailNotifier : BaseNotifier<MailMessage>, INotifier
 	{
-		private readonly IMailMessageBuilder _messageBuilder;
-		private readonly IOptions _options;
 		private readonly ILogger _logger = LogManager.For<EmailNotifier>();
 
-		public EmailNotifier(IMailMessageBuilder messageBuilder, IOptions options)
+		public EmailNotifier(IMessageBuilder<MailMessage> messageBuilder, IOptions options)
+			: base(messageBuilder, options)
 		{
-			_messageBuilder = messageBuilder ?? throw new ArgumentNullException(nameof(messageBuilder));
-			_options = options ?? throw new ArgumentNullException(nameof(options));
 		}
 		
-		public async Task Notify(NotificationMessage message)
+		public override async Task Notify(NotificationMessage message)
 		{
 			var smtp = new SmtpClient(_options.Email.SmtpServer);
 			smtp.Credentials = new NetworkCredential(_options.Email.UserName, _options.Email.Password);
