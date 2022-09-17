@@ -5,21 +5,31 @@ using Nml.Refactor.Me.MessageBuilders;
 
 namespace Nml.Refactor.Me.Notifiers
 {
-	public class SmsNotifier : INotifier
+	public class SmsNotifier : BaseNotifier<string>, INotifier
 	{
-		private readonly IStringMessageBuilder _messageBuilder;
-		private readonly IOptions _options;
 		private readonly ILogger _logger = LogManager.For<SmsNotifier>();
 
-		public SmsNotifier(IStringMessageBuilder messageBuilder, IOptions options)
+		public SmsNotifier(IMessageBuilder<string> messageBuilder, IOptions options)
+			: base(messageBuilder, options)
 		{
-			_messageBuilder = messageBuilder ?? throw new ArgumentNullException(nameof(messageBuilder));
-			_options = options ?? throw new ArgumentNullException(nameof(options));
 		}
 		
-		public async Task Notify(NotificationMessage message)
+		public override async Task Notify(NotificationMessage message)
 		{
-			//Complete after refactoring inheritance. Use "SmsApiClient"
+			var smsApiClient = new SmsApiClient(_options.Sms.ApiUri, _options.Sms.ApiKey);
+			var smsMessage = _messageBuilder.CreateMessage(message);
+
+			try
+			{
+				// not sure which variable is the mobile number, so I just put the message.From
+				await smsApiClient.SendAsync(message.From, smsMessage);
+				_logger.LogTrace($"SMS sent.");
+			}
+			catch (Exception e)
+			{
+				_logger.LogError(e, $"Failed to send SMS. {e.Message}");
+				throw;
+			}
 		}
 	}
 }
